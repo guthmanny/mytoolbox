@@ -93,93 +93,94 @@ double* expSineSweep(double fstart, double fstop, double lensInSeconds, double f
 	free(mag);
 }
 
-void freqLogResp(char* filename, double fstart, double fstop, double* input, int inLens, double fs)
-{
-	
-	double* in;
-	fftw_complex* out;
-	fftw_complex* out1;
-	fftw_plan plan;
-	int result;
-	int i;
-	FILE *fp;
-	
-	double tlens = ((double)inLens)/fs;
-	
-	// generate the reference signal
-	double * refsig = expSineSweep(fstart, fstop, tlens, fs);
-	
-	//the nearest power of two sequence length for FFT operations.
-	int fftSize = pow(2, ceil(log2(inLens)));
-	
-	// Calculate size of result data
-	int resultSize = (fftSize / 2) + 1;
-	
-	// Allocate memory to hold input and output data
-	in = (double *) fftw_malloc(fftSize * sizeof(double));
-	out = (fftw_complex *) fftw_malloc(resultSize * sizeof(fftw_complex));
-	out1 = (fftw_complex *) fftw_malloc(resultSize * sizeof(fftw_complex));
-	if (in == NULL || out == NULL || out1 == NULL) {
-		result = 1;
-		fprintf(stderr, "outputFFT: Could not allocate input/output data\n");
-		goto finalise;
-	}
-	
-	// Create the plan and check for success
-	plan = fftw_plan_dft_r2c_1d(fftSize, in, out, FFTW_MEASURE); 
-	if (plan == NULL) {
-		result = 1;
-		fprintf(stderr, "outputFFT: Could not create plan\n");
-		goto finalise;
-	}
-	
-	// Copy window and add zero padding (if required)
-	for (i=0 ; i < inLens ; i++) in[i] = input[i];
-	for ( ; i<fftSize ; i++) in[i] = 0;
-	
-	// Perform fft
-	fftw_execute(plan);
+//void freqLogResp(char* filename, double fstart, double fstop, double* input, int inLens, double fs)
+//{
+//	
+//	double* in;
+//	fftw_complex* out;
+//	fftw_complex* out1;
+//	fftw_plan plan;
+//	int result;
+//	int i;
+//	FILE *fp;
+//	
+//	double tlens = ((double)inLens)/fs; //time length in Seconds
+//	
+//	// generate the reference signal
+//	double * refsig = expSineSweep(fstart, fstop, tlens, fs);
+//	
+//	//the nearest power of two sequence length for FFT operations.
+//	int fftSize = pow(2, ceil(log2(inLens)));
+//	
+//	// Calculate size of result data
+//	int resultSize = (fftSize / 2) + 1;
+//	
+//	// Allocate memory to hold input and output data
+//	in = (double *) fftw_malloc(fftSize * sizeof(double));
+//	out = (fftw_complex *) fftw_malloc(resultSize * sizeof(fftw_complex));
+//	out1 = (fftw_complex *) fftw_malloc(resultSize * sizeof(fftw_complex));
+//	if (in == NULL || out == NULL || out1 == NULL) {
+//		result = 1;
+//		fprintf(stderr, "outputFFT: Could not allocate input/output data\n");
+//		goto finalise;
+//	}
+//	
+//	// Create the plan and check for success
+//	plan = fftw_plan_dft_r2c_1d(fftSize, in, out, FFTW_MEASURE); 
+//	if (plan == NULL) {
+//		result = 1;
+//		fprintf(stderr, "outputFFT: Could not create plan\n");
+//		goto finalise;
+//	}
+//	
+//	// Copy window and add zero padding (if required)
+//	for (i=0 ; i < inLens ; i++) in[i] = input[i];
+//	for ( ; i<fftSize ; i++) in[i] = 0;
+//	
+//	// Perform fft
+//	fftw_execute(plan);
+//
+//
+//	// Create the plan and check for success
+//	plan = fftw_plan_dft_r2c_1d(fftSize, in, out1, FFTW_MEASURE); 
+//	if (plan == NULL) {
+//		result = 1;
+//		fprintf(stderr, "outputFFT: Could not create plan\n");
+//		goto finalise;
+//	}
+//
+//	// reference signal fft
+//	for (i=0 ; i < inLens ; i++) in[i] = refsig[i];
+//	for ( ; i<fftSize ; i++) in[i] = 0;
+//	
+//	// Perform fft
+//	fftw_execute(plan);
+//
+//	
+//	// Open file for writing
+//	fp = fopen(filename, "w");
+//	if (fp == NULL) {
+//		result = 1;
+//		fprintf(stderr, "outputFFT: Could open output file for writing\n");
+//		goto finalise;
+//	}
+//	
+//	// Output result
+//	for (i=0 ; i<resultSize ; i++)
+//		{
+//			double freq = fs * i / fftSize;
+//			double mag = sqrt(out[i][0] * out[i][0] + out[i][1] * out[i][1]);
+//			double magdB = 20 * log10(mag);
+//			double mag1 = sqrt(out1[i][0] * out1[i][0] + out1[i][1] * out1[i][1]);
+//			double magdB1 = 20 * log10(mag1);
+//			fprintf(fp, "%f %f\n",freq, magdB-magdB1);
+//		}
+//
+//	// Perform any cleaning up
+//	finalise:
+//	if (plan != NULL) fftw_destroy_plan(plan);
+//	if (in != NULL) fftw_free(in);
+//	if (out != NULL) fftw_free(out);
+//	if (fp != NULL) fclose(fp);
+//}
 
-
-	// Create the plan and check for success
-	plan = fftw_plan_dft_r2c_1d(fftSize, in, out1, FFTW_MEASURE); 
-	if (plan == NULL) {
-		result = 1;
-		fprintf(stderr, "outputFFT: Could not create plan\n");
-		goto finalise;
-	}
-
-	// reference signal fft
-	for (i=0 ; i < inLens ; i++) in[i] = refsig[i];
-	for ( ; i<fftSize ; i++) in[i] = 0;
-	
-	// Perform fft
-	fftw_execute(plan);
-
-	
-	// Open file for writing
-	fp = fopen(filename, "w");
-	if (fp == NULL) {
-		result = 1;
-		fprintf(stderr, "outputFFT: Could open output file for writing\n");
-		goto finalise;
-	}
-	
-	// Output result
-	for (i=0 ; i<resultSize ; i++)
-		{
-			double freq = fs * i / fftSize;
-			double mag = sqrt(out[i][0] * out[i][0] + out[i][1] * out[i][1]);
-			double magdB = 20 * log10(mag);
-			double mag1 = sqrt(out1[i][0] * out1[i][0] + out1[i][1] * out1[i][1]);
-			double magdB1 = 20 * log10(mag1);
-			fprintf(fp, "%f %f\n",freq, magdB-magdB1);
-		}
-
-	// Perform any cleaning up
-	finalise:
-	if (plan != NULL) fftw_destroy_plan(plan);
-	if (in != NULL) fftw_free(in);
-	if (out != NULL) fftw_free(out);
-	if (fp != NULL) fclose(fp);
-}
